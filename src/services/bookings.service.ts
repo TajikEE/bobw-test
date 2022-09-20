@@ -35,18 +35,18 @@ export async function create(bookingData) {
   });
 
   await booking.save();
-
+  // call email service here
   return booking;
 }
 
-export async function getMultiple(email) {
-  const bookings = await Booking.createQueryBuilder()
-    .select("booking")
-    .from(Booking, "booking")
-    // .where("email = :email", {
-    //   email,
-    // })
-    .getMany();
-
-  return bookings;
+export async function getMultiple(queryData) {
+  const { email, isConfirmed } = queryData;
+  if (email && isConfirmed) {
+    return await Booking.findBy({ is_confirmed: isConfirmed, email });
+  } else if (email) {
+    return await Booking.findBy({ email });
+  } else if (isConfirmed) {
+    return await Booking.findBy({ is_confirmed: isConfirmed });
+  }
+  return await Booking.find();
 }
