@@ -1,5 +1,7 @@
 import { Booking } from "../entities/Booking";
+import { Invoice } from "../entities/Invoice";
 import { Room } from "../entities/Room";
+import { confirmBookingEmail } from "./email.service";
 
 export async function create(bookingData) {
   const { email, rooms, start, end } = bookingData;
@@ -27,6 +29,10 @@ export async function create(bookingData) {
     .where("id IN (:...rooms)", { rooms })
     .getMany();
 
+  if (existingRooms.length !== rooms.length) {
+    throw new Error("One or more rooms do not exist");
+  }
+
   const booking = Booking.create({
     email,
     rooms: existingRooms,
@@ -36,6 +42,7 @@ export async function create(bookingData) {
 
   await booking.save();
   // call email service here
+  await confirmBookingEmail(email, booking.id);
   return booking;
 }
 
@@ -49,4 +56,22 @@ export async function getMultiple(queryData) {
     return await Booking.findBy({ is_confirmed: isConfirmed });
   }
   return await Booking.find();
+}
+
+export async function confirmBooking(bookingId) {
+  const booking = await Booking.findOne(bookingId);
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+  booking.is_confirmed = true;
+
+  const invoice = Invoice.create({
+    amount: booking.rooms.length * 100,
+    booking,
+  });
+
+  await invoice.save();
+  await booking.save();
+
+  return booking;
 }

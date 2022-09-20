@@ -1,6 +1,6 @@
 import express from "express";
-const router = express.Router();
 import { get, create } from "../controllers/rooms.controller";
+const router = express.Router();
 
 router.get("/", get);
 

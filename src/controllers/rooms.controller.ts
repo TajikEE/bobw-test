@@ -1,7 +1,4 @@
-import {
-  create as createRoom,
-  getMultiple as getRooms,
-} from "../services/rooms.service";
+import { createRoom, getRooms } from "../services/rooms.service";
 
 export async function get(req, res, next) {
   try {

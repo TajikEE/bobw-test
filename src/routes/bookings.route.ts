@@ -1,9 +1,12 @@
 import express from "express";
+import { get, create, confirm } from "../controllers/bookings.controller";
+
 const router = express.Router();
-import { get, create } from "../controllers/bookings.controller";
 
 router.get("/", get);
 
 router.post("/", create);
+
+router.get("/confirm/:id", confirm);
 
 export { router as bookingsRouter };

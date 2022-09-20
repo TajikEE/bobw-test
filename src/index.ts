@@ -1,10 +1,12 @@
-import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
+dotenv.config();
+
+import express, { Express, Request, Response } from "express";
+
 import { AppDataSource } from "./data-source";
 import { bookingsRouter } from "./routes/bookings.route";
+import { invoicesRouter } from "./routes/invoices.route";
 import { roomsRouter } from "./routes/rooms.route";
-
-dotenv.config();
 
 // establish database connection
 AppDataSource.initialize()
@@ -27,6 +29,7 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/booking", bookingsRouter);
 app.use("/room", roomsRouter);
+app.use("/invoice", invoicesRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
