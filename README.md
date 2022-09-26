@@ -26,8 +26,27 @@ Assumptions made for the task:
 
 - follow steps from above for local machine and then: npm test
 
-## Use postgres client to see data
+## Want to use postgres client to see data?
 
 - make sure postgres is installed on local machine
 - download any client like pgadmin 4 and then use the configs from .env file.
-- note that if you are running on local then in the client connection option, use port 5432. But if you are running on docker, then use 5433
+- note that if you are running on **local** then in the client connection option for pgadmin 4 (or any other):
+  - use port as 5432
+- note that if you are running on **docker** then in the client connection option for pgadmin 4 (or any other):
+- use port as 5432
+
+## Input params for different routes
+
+- if you want to test the api with postman or similar tools then, below is a list of params that you can use and keep similar format for testing:
+- for creating room:
+  {
+  "name": "Super expensive suite"
+  }
+
+- for creating booking:
+  {
+  "email": "tajik.ifrad@gmail.com",
+  "roomIds": [1],
+  "start": "2022-10-04T15:15:00.000Z",
+  "end": "2022-10-05T15:15:00.000Z"
+  }

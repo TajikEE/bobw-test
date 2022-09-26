@@ -6,7 +6,7 @@ import { Room } from "../entities/Room";
 
 export const AppDataSource: DataSource = new DataSource({
   type: "postgres",
-  host: process.env.DB_HOST_LOCAL,
+  host: process.env.DB_HOST_DOCKER,
   port: parseInt(process.env.DB_PORT),
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
