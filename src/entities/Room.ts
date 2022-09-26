@@ -15,21 +15,14 @@ export class Room extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({
-    nullable: true,
-  })
-  number: number;
+  @Column()
+  name: string;
 
   @CreateDateColumn()
   created_at: Date;
 
   @UpdateDateColumn()
   updated_at: Date;
-
-  // @ManyToMany((type) => Booking, {
-  //   cascade: true,
-  // })
-  // bookings: Booking[];
 
   @ManyToMany((type) => Booking, {
     cascade: true,

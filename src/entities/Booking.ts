@@ -4,10 +4,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToMany,
-  OneToMany,
   JoinTable,
   BaseEntity,
   PrimaryGeneratedColumn,
+  OneToOne,
 } from "typeorm";
 import { Room } from "./Room";
 import { Invoice } from "./Invoice";
@@ -20,7 +20,7 @@ export class Booking extends BaseEntity {
   @Column()
   email: string;
 
-  @OneToMany(() => Invoice, (invoice) => invoice.id)
+  @OneToOne(() => Invoice, (invoice) => invoice.id)
   invoices: Invoice[];
 
   @ManyToMany((type) => Room, {
@@ -45,10 +45,13 @@ export class Booking extends BaseEntity {
   })
   is_confirmed: boolean;
 
-  @Column({ type: "timestamptz" })
+  @Column({ nullable: true })
+  expires_at: Date;
+
+  @Column()
   start: Date;
 
-  @Column({ type: "timestamptz" })
+  @Column()
   end: Date;
 
   @CreateDateColumn()

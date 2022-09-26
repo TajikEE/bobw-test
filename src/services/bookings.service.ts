@@ -2,76 +2,128 @@ import { Booking } from "../entities/Booking";
 import { Invoice } from "../entities/Invoice";
 import { Room } from "../entities/Room";
 import { confirmBookingEmail } from "./email.service";
+import { CreateBookingParams, GetBookingsParams } from "../interfaces/booking";
+import moment from "moment";
 
-export async function create(bookingData) {
-  const { email, rooms, start, end } = bookingData;
+export async function create(bookingData): Promise<{ data: Booking }> {
+  const { email, roomIds, start, end }: CreateBookingParams = bookingData;
 
-  const bookedRooms = await Room.createQueryBuilder()
-    .select("room")
-    .from(Room, "room")
-    .leftJoinAndSelect("room.bookings", "booking")
-    .where("booking.start BETWEEN :start AND :end", {
-      start,
-      end,
-    })
-    .andWhere("room.id IN (:...rooms)", { rooms })
-    .andWhere("booking.is_confirmed = :is_confirmed", { is_confirmed: false })
-    .getMany();
+  const now = moment();
+  const startTimestamp = moment(start);
+  const endTimestamp = moment(end);
+
+  const bookedRooms: Room[] = await checkRoomAvailability(
+    startTimestamp,
+    endTimestamp,
+    roomIds,
+    now
+  );
 
   if (bookedRooms.length > 0) {
     throw new Error(
-      "The following rooms are already booked: " +
-        bookedRooms.map((room) => room.number).join(", ")
+      "The following room ids are already booked: " +
+        bookedRooms.map((room) => room.id).join(", ")
     );
   }
 
   const existingRooms = await Room.createQueryBuilder()
-    .where("id IN (:...rooms)", { rooms })
+    .where("id IN (:...roomIds)", { roomIds })
     .getMany();
 
-  if (existingRooms.length !== rooms.length) {
+  if (existingRooms.length !== roomIds.length) {
     throw new Error("One or more rooms do not exist");
   }
+
+  // set expiry time for booking to allow confirmation from email
+  const expiresAt = moment(now).add(
+    process.env.BOOKING_TIME_BUFFER_MINUTES,
+    "minutes"
+  );
 
   const booking = Booking.create({
     email,
     rooms: existingRooms,
-    start,
-    end,
+    expires_at: expiresAt,
+    start: startTimestamp,
+    end: endTimestamp,
   });
-
   await booking.save();
-  // call email service here
-  await confirmBookingEmail(email, booking.id);
-  return booking;
-}
 
-export async function getMultiple(queryData) {
-  const { email, isConfirmed } = queryData;
-  if (email && isConfirmed) {
-    return await Booking.findBy({ is_confirmed: isConfirmed, email });
-  } else if (email) {
-    return await Booking.findBy({ email });
-  } else if (isConfirmed) {
-    return await Booking.findBy({ is_confirmed: isConfirmed });
+  try {
+    await confirmBookingEmail(email, booking.id, existingRooms.length);
+  } catch (error) {
+    throw new Error("Confirmation email was not sent");
   }
-  return await Booking.find();
+
+  return { data: booking };
 }
 
-export async function confirmBooking(bookingId) {
-  const booking = await Booking.findOne(bookingId);
+export async function getMultiple(
+  queryData
+): Promise<{ data?: Booking[] } | { message?: string }> {
+  const { email, isConfirmed }: GetBookingsParams = queryData;
+
+  if (email || isConfirmed) {
+    const bookings = await Booking.findBy({ is_confirmed: isConfirmed, email });
+
+    return bookings.length > 0
+      ? { data: bookings }
+      : { message: "No bookings found" };
+  }
+  return { data: await Booking.find() };
+}
+
+export async function confirmBooking(
+  bookingId: number,
+  roomsCount: number
+): Promise<{ data: Booking }> {
+  const booking = await Booking.findOne({ where: { id: bookingId } });
+
   if (!booking) {
     throw new Error("Booking not found");
   }
   booking.is_confirmed = true;
 
   const invoice = Invoice.create({
-    amount: booking.rooms.length * 100,
+    amount: roomsCount * 100,
     booking,
   });
 
   await invoice.save();
   await booking.save();
 
-  return booking;
+  return { data: booking };
+}
+
+export async function checkRoomAvailability(
+  startTimestamp: moment.Moment,
+  endTimestamp: moment.Moment,
+  roomIds: number[],
+  now: moment.Moment
+): Promise<Room[]> {
+  const bookedRooms: Room[] = await Room.createQueryBuilder()
+    .select("room")
+    .from(Room, "room")
+    .leftJoinAndSelect("room.bookings", "booking")
+    .where(
+      `((booking.start BETWEEN :startTimestamp AND :endTimestamp) OR
+            (booking.end BETWEEN :startTimestamp AND :endTimestamp) OR
+            (:startTimestamp BETWEEN booking.start AND booking.end) OR
+            (:endTimestamp BETWEEN booking.start AND booking.end))`,
+      {
+        startTimestamp,
+        endTimestamp,
+      }
+    )
+    .andWhere(
+      "room.id IN (:...roomIds) AND (booking.is_confirmed = :is_confirmed OR booking.expires_at > :now)",
+      {
+        roomIds,
+        is_confirmed: true,
+        now,
+      }
+    )
+    .getMany();
+
+  return bookedRooms;
 }

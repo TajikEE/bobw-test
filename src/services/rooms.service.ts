@@ -1,20 +1,17 @@
 import { Room } from "../entities/Room";
-import { createQueryBuilder } from "typeorm";
 
-export async function createRoom(roomData) {
-  const { number } = roomData;
-
+export async function createRoom(name: string): Promise<{ data: Room }> {
   const room = Room.create({
-    number,
+    name,
   });
 
-  await room.save();
+  const data = await room.save();
 
-  return room;
+  return { data };
 }
 
-export async function getRooms() {
-  const rooms = await Room.find();
+export async function getRooms(): Promise<{ data: Room[] }> {
+  const data = await Room.find();
 
-  return rooms;
+  return { data };
 }

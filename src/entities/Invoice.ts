@@ -4,9 +4,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   PrimaryGeneratedColumn,
-  ManyToOne,
   JoinColumn,
   BaseEntity,
+  OneToOne,
 } from "typeorm";
 import { Booking } from "./Booking";
 
@@ -20,7 +20,7 @@ export class Invoice extends BaseEntity {
   })
   amount: number;
 
-  @ManyToOne(() => Booking, (booking) => booking.invoices)
+  @OneToOne(() => Booking, (booking) => booking.invoices)
   @JoinColumn({
     name: "booking_id",
   })

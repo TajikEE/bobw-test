@@ -1,10 +1,11 @@
-import express from "express";
+import express, { Router } from "express";
+import { param } from "express-validator";
 import { getInvoices, getInvoice } from "../controllers/invoices.controller";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.get("/", getInvoices);
 
-router.get("/:id", getInvoice);
+router.get("/:id", param("id").isNumeric(), getInvoice);
 
 export { router as invoicesRouter };

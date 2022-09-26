@@ -2,8 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { Express, Request, Response } from "express";
-
-import { AppDataSource } from "./data-source";
+import { AppDataSource } from "./configs/data-source";
 import { bookingsRouter } from "./routes/bookings.route";
 import { invoicesRouter } from "./routes/invoices.route";
 import { roomsRouter } from "./routes/rooms.route";
@@ -21,7 +20,7 @@ AppDataSource.initialize()
 const app: Express = express();
 app.use(express.json());
 
-const port = process.env.PORT;
+const port: number = Number(process.env.PORT);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Express");
